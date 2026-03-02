@@ -105,11 +105,27 @@ const SITE = {
   ZMAX: 3   // dtm.png values 0..255 scaled to 0..2.018 m
 };
 
-/* --- DEVICE DETECTION (Quest + iPad default to UNLIT) --- */
+/* --- DEVICE DETECTION: mobile/iPad/Quest default to UNLIT; desktop default to PBR --- */
 const ua = navigator.userAgent || "";
+const platform = navigator.platform || "";
+const maxTouch = navigator.maxTouchPoints || 0;
+
+// Quest / Meta
 const isQuest = /OculusBrowser|Quest|Meta Quest/i.test(ua);
-const isIPadLike = /iPad/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-let forceUnlit = (isQuest || isIPadLike);
+
+// iPhone / Android phones
+const isPhone = /iPhone|iPod|Android.*Mobile|Windows Phone|IEMobile/i.test(ua) || /Mobi/i.test(ua);
+
+// iPad (including iPadOS that sometimes reports as MacIntel)
+const isIPad =
+  /iPad/i.test(ua) ||
+  (platform === 'MacIntel' && maxTouch > 1 && /Safari/i.test(ua) && !/Chrome|CriOS|EdgiOS|FxiOS/i.test(ua));
+
+// Any touch-first tablet-ish device (safety net, but avoids treating Macs as iPad)
+const isTouchTablet = (!isPhone && maxTouch > 1 && /Android/i.test(ua) && !/Mobile/i.test(ua));
+
+// Default lighting choice
+let forceUnlit = (isQuest || isPhone || isIPad || isTouchTablet);
 litLabel.textContent = forceUnlit ? 'Unlit' : 'PBR';
 
 /* -------- RENDERER / SCENE -------- */
